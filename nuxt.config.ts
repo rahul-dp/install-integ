@@ -8,4 +8,15 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  app: {
+    baseURL: process.env.NODE_ENV === 'production' ? '/install-integ/' : '/',
+  },
+  ssr: false, // Enable if you need SSR
+  target: 'static',
+  router: {
+    base: process.env.NODE_ENV === 'production' ? '/install-integ/' : '/',
+  },
+  experimental: {
+    payloadExtraction: false,
+  },
 })
