@@ -37,13 +37,6 @@
               </div>
             </div>
           </div>
-          <button
-            v-if="!currentIntegration.connected"
-            @click="connectIntegration"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Connect
-          </button>
         </div>
       </div>
     </div>
@@ -70,12 +63,12 @@
 
       <!-- Tab Content -->
       <div class="p-6">
-        <!-- Settings Tab -->
-        <div v-if="activeTab === 'settings'">
+        <!-- General Tab -->
+        <div v-if="activeTab === 'general'">
           <h2 class="text-lg font-semibold text-gray-900 mb-4">Configuration Settings</h2>
           
           <div class="space-y-6">
-            <div>
+            <div v-if="currentIntegration.authType === 'apiKey'">
               <label class="block text-sm font-medium text-gray-700 mb-2">
                 API Key
               </label>
@@ -87,7 +80,17 @@
               />
               <p class="mt-1 text-sm text-gray-500">Your API key is encrypted and stored securely</p>
             </div>
-
+            <div v-if="currentIntegration.domainSuffix">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Domain
+              </label>
+              <input
+                type="text"
+                v-model="settings.domain"
+                :placeholder="`Enter your ${currentIntegration.name} domain (e.g. example${currentIntegration.domainSuffix})`"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
                 Webhook URL
@@ -135,47 +138,17 @@
                 @click="saveSettings"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Save Settings
+                {{ currentIntegration.connected ? 'Save Settings' : 'Save & Connect' }}
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Activity Tab -->
-        <div v-if="activeTab === 'activity'">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          
-          <div class="space-y-4">
-            <div v-for="activity in activities" :key="activity.id" class="flex items-start space-x-3 py-3 border-b border-gray-100">
-              <div :class="[
-                'w-2 h-2 rounded-full mt-2',
-                activity.type === 'success' ? 'bg-green-500' : 
-                activity.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-              ]"></div>
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900">{{ activity.message }}</p>
-                <p class="text-xs text-gray-500">{{ activity.timestamp }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Permissions Tab -->
-        <div v-if="activeTab === 'permissions'">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Permissions & Access</h2>
-          
-          <div class="space-y-4">
-            <div v-for="permission in permissions" :key="permission.id" class="flex items-center justify-between py-3 border-b border-gray-100">
-              <div>
-                <h3 class="text-sm font-medium text-gray-900">{{ permission.name }}</h3>
-                <p class="text-sm text-gray-500">{{ permission.description }}</p>
-              </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" v-model="permission.enabled" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-          </div>
+        <!-- Call Logging Tab -->
+        <div v-if="activeTab === 'call-logging'">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Call Logging Configuration</h2>
+          <p class="text-gray-600">Configure how calls are logged and tracked for this integration.</p>
+          <!-- Add call logging specific content here -->
         </div>
       </div>
     </div>
@@ -201,15 +174,29 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const activeTab = ref('settings')
+const activeTab = ref('general')
 const showDisconnectModal = ref(false)
 
 const tabs = [
-  { id: 'settings', label: 'Settings' },
-  { id: 'activity', label: 'Activity' },
-  { id: 'permissions', label: 'Permissions' },
+  { id: 'general', label: 'General' },
   { id: 'call-logging', label: 'Call logging' },
 ]
+
+// Integration buttons data - this should match the data from integrations.vue
+const integrationButtons = [
+  { icon: '💬', name: 'Slack', description: 'Connect your Slack workspace', domainSuffix: '.slack.com', iconBg: 'bg-purple-100', apiKeyHint: 'Find this in Slack API settings', authType: 'apiKey', category: 'Communication' },
+  { icon: '📅', name: 'Google Calendar', description: 'Sync your calendar events', domainSuffix: '.google.com', iconBg: 'bg-blue-100', authType: 'oauth', category: 'Productivity' },
+  { icon: '☁️', name: 'Salesforce', description: 'Connect your Salesforce account', domainSuffix: '.salesforce.com', iconBg: 'bg-sky-100', authType: 'apiKey', category: 'CRM' },
+  { icon: '🎯', name: 'Zendesk', description: 'Connect your Zendesk support', domainSuffix: '.zendesk.com', iconBg: 'bg-orange-100', authType: 'apiKey', category: 'Support' },
+  { icon: '📹', name: 'Zoom', description: 'Connect your Zoom account', iconBg: 'bg-blue-100', authType: 'oauth', category: 'Communication' },
+  { icon: '📦', name: 'Dropbox', description: 'Connect your Dropbox', iconBg: 'bg-indigo-100', authType: 'apiKey', category: 'Storage' },
+  { icon: '👥', name: 'Microsoft Teams', description: 'Connect Microsoft Teams', iconBg: 'bg-purple-100', authType: 'oauth', category: 'Communication' },
+  { icon: '🐙', name: 'GitHub', description: 'Connect GitHub repository', iconBg: 'bg-gray-100', authType: 'apiKey', category: 'Development' },
+  { icon: '📊', name: 'Google Analytics', description: 'Connect Google Analytics', iconBg: 'bg-green-100', authType: 'apiKey', category: 'Analytics' },
+  { icon: '🔧', name: 'Webhook', description: 'Set up a custom webhook', iconBg: 'bg-gray-200', authType: 'oauth', category: 'Development' },
+  { text: 'Freshdesk', name: 'Freshdesk', description: 'Connect Freshdesk support', domainSuffix: '.freshdesk.com', iconBg: 'bg-orange-100', authType: 'apiKey', category: 'Support' },
+  { icon: '🔍', name: 'Search', description: 'Search for more integrations', iconBg: 'bg-gray-200', authType: 'apiKey', category: 'Other' }
+];
 
 // Mock data - in real app, fetch based on route.params.id
 const integrationData = {
@@ -220,7 +207,8 @@ const integrationData = {
     icon: '💬',
     iconBg: 'bg-purple-100',
     description: 'Send notifications and messages to Slack channels',
-    connected: true
+    connected: true,
+    authType: 'apiKey'
   },
   'google-calendar': {
     id: 'google-calendar',
@@ -229,7 +217,8 @@ const integrationData = {
     icon: '📅',
     iconBg: 'bg-blue-100',
     description: 'Sync events and meetings with Google Calendar',
-    connected: true
+    connected: true,
+    authType: 'oauth'
   },
   'salesforce': {
     id: 'salesforce',
@@ -238,16 +227,56 @@ const integrationData = {
     icon: '☁️',
     iconBg: 'bg-sky-100',
     description: 'Integrate with Salesforce CRM for customer data',
-    connected: false
+    connected: false,
+    authType: 'apiKey'
   }
 }
 
 const currentIntegration = computed(() => {
-  return integrationData[route.params.id] || integrationData['slack']
+  const routeId = route.params.id;
+  
+  // First check if it exists in our hardcoded data
+  if (integrationData[routeId]) {
+    return integrationData[routeId];
+  }
+  
+  // If not, try to find it in the integration buttons by matching the ID format
+  const buttonIntegration = integrationButtons.find(btn => {
+    const buttonId = btn.name.toLowerCase().replace(/\s+/g, '-');
+    return buttonId === routeId;
+  });
+  
+  if (buttonIntegration) {
+    return {
+      id: routeId,
+      name: buttonIntegration.name,
+      category: buttonIntegration.category || 'Other',
+      icon: buttonIntegration.icon || buttonIntegration.text?.charAt(0) || '🔗',
+      iconBg: buttonIntegration.iconBg,
+      description: buttonIntegration.description,
+      connected: false, // New integrations start as not connected
+      authType: buttonIntegration.authType,
+      domainSuffix: buttonIntegration.domainSuffix,
+      apiKeyHint: buttonIntegration.apiKeyHint
+    };
+  }
+  
+  // Fallback if integration not found
+  return {
+    id: routeId,
+    name: 'Unknown Integration',
+    category: 'Other',
+    icon: '🔗',
+    iconBg: 'bg-gray-100',
+    description: 'Integration configuration',
+    connected: false,
+    authType: 'apiKey'
+  };
 })
 
 const settings = ref({
   apiKey: '',
+  domain: '',
   webhookUrl: '',
   syncFrequency: 'realtime',
   notifications: true
@@ -307,13 +336,29 @@ const permissions = ref([
   }
 ])
 
-const connectIntegration = () => {
-  // Handle connection logic
-  console.log('Connecting integration...')
-}
-
 const saveSettings = () => {
-  // Handle save logic
-  console.log('Saving settings...', settings.value)
+  // Handle connection logic based on auth type if not connected
+  if (!currentIntegration.value.connected) {
+    if (currentIntegration.value.authType === 'oauth') {
+      console.log('Starting OAuth flow for:', currentIntegration.value.name)
+      // In a real app, this would redirect to OAuth provider
+    } else {
+      console.log('Connecting with API key for:', currentIntegration.value.name)
+      // Validate that required fields are filled
+      if (currentIntegration.value.domainSuffix && !settings.value.domain) {
+        alert('Please enter your domain name');
+        return;
+      }
+      if (!settings.value.apiKey) {
+        alert('Please enter your API key');
+        return;
+      }
+      // In a real app, this would make an API call to connect
+      console.log('Connection settings:', settings.value);
+    }
+  } else {
+    // Just save settings if already connected
+    console.log('Saving settings...', settings.value)
+  }
 }
 </script>

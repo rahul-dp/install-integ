@@ -22,7 +22,7 @@
         <button 
           v-for="(btn, index) in integrationButtons" 
           :key="index"
-          @click="btn.authType === 'oauth' ? openOAuthModal(btn) : openApiKeyModal(btn)"
+          @click="navigateToIntegration(btn)"
           class="bg-gray-200 hover:bg-gray-300 px-2 py-2 rounded-lg flex items-center justify-center text-white cursor-pointer"
           :class="{ 'bg-gray-300': btn.text }"
         >
@@ -123,37 +123,15 @@
         </div>
       </div>
     </div>
-
-    <apiAuth
-      v-if="showApiKeyModal"
-      :integration="selectedIntegration"
-      @close="closeApiKeyModal"
-      @connect="connectWithApiKey"
-    />
-
-    <oAuth
-      v-if="showOAuthModal"
-      :integration="selectedIntegration"
-      @close="closeOAuthModal"
-      @connect="connectWithOAuth"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import apiAuth from '~/components/apiAuth.vue';
-import oAuth from '~/components/oAuth.vue';
+import { useRoute, useRouter } from 'vue-router';
 
 // State
-const showApiKeyModal = ref(false);
-const showOAuthModal = ref(false);
-const selectedIntegration = ref(null);
-const apiKeyForm = ref({
-  domain: '',
-  apiKey: ''
-});
+const router = useRouter();
 
 // Add a new ref for the connected integrations
 const connectedIntegrations = ref([
@@ -196,100 +174,19 @@ const connectedIntegrations = ref([
 ]);
 
 // Computed
-const apiKeyFormValid = computed(() => {
-  return apiKeyForm.value.domain.trim() !== '' && apiKeyForm.value.apiKey.trim() !== '';
-});
-
 const route = useRoute();
 
 // Methods
-const openApiKeyModal = (integration) => {
-  selectedIntegration.value = integration;
-  apiKeyForm.value = { domain: '', apiKey: '' };
-  showApiKeyModal.value = true;
-};
-
-const openOAuthModal = (integration) => {
-  selectedIntegration.value = integration;
-  showOAuthModal.value = true;
-};
-
-const closeApiKeyModal = () => {
-  showApiKeyModal.value = false;
-  selectedIntegration.value = null;
-};
-
-const closeOAuthModal = () => {
-  showOAuthModal.value = false;
-  selectedIntegration.value = null;
-};
-
-const connectWithApiKey = async (formData) => {
-  if (!selectedIntegration.value) return;
+const navigateToIntegration = (integration) => {
+  // Create a unique ID for the integration if it doesn't exist
+  const integrationId = integration.name.toLowerCase().replace(/\s+/g, '-');
   
-  try {
-    // Create a new integration object with the form data
-    const newIntegration = {
-      id: `${selectedIntegration.value.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-      name: selectedIntegration.value.name,
-      icon: selectedIntegration.value.icon,
-      iconBg: selectedIntegration.value.iconBg,
-      description: selectedIntegration.value.description,
-      connected: true,
-      instance: `https://${formData.domain}${selectedIntegration.value.domainSuffix || ''}`,
-      lastSynced: 'Just now',
-      version: '1.0.0'
-    };
-
-    // Add to the beginning of the connected integrations list
-    connectedIntegrations.value.unshift(newIntegration);
-    
-    // Close the modal and reset form
-    closeApiKeyModal();
-    
-    // Optional: Show success message
-    console.log('Successfully connected:', newIntegration);
-    
-  } catch (error) {
-    console.error('Failed to connect with API Key:', error);
-    // Optionally show error message to user
-  }
-};
-
-const connectWithOAuth = async () => {
-  if (!selectedIntegration.value) return;
-  
-  try {
-    // For OAuth, we'll just add a basic integration since we don't have the actual OAuth flow implemented
-    const newIntegration = {
-      id: `${selectedIntegration.value.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-      name: selectedIntegration.value.name,
-      icon: selectedIntegration.value.icon,
-      iconBg: selectedIntegration.value.iconBg,
-      description: selectedIntegration.value.description,
-      connected: true,
-      instance: `https://app.${selectedIntegration.value.name.toLowerCase().replace(/\s+/g, '')}.com`,
-      lastSynced: 'Just now',
-      version: '1.0.0'
-    };
-
-    // Add to the beginning of the connected integrations list
-    connectedIntegrations.value.unshift(newIntegration);
-    
-    // Close the modal
-    closeOAuthModal();
-    
-    // Optional: Show success message
-    console.log('Successfully connected via OAuth:', newIntegration);
-    
-  } catch (error) {
-    console.error('OAuth flow failed:', error);
-    // Optionally show error message to user
-  }
+  // Navigate to the integration page which will open on the settings tab by default
+  router.push(`/integrations/${integrationId}`);
 };
 
 onMounted(() => {
-  // Check for query parameter to open Freshdesk modal
+  // Check for query parameter to navigate to specific integration
   if (route.query.add === 'freshdesk') {
     // Find Freshdesk integration from the buttons
     const freshdeskIntegration = integrationButtons.find(btn => 
@@ -299,11 +196,7 @@ onMounted(() => {
     if (freshdeskIntegration) {
       // Small timeout to ensure the component is fully mounted
       setTimeout(() => {
-        if (freshdeskIntegration.authType === 'oauth') {
-          openOAuthModal(freshdeskIntegration);
-        } else {
-          openApiKeyModal(freshdeskIntegration);
-        }
+        navigateToIntegration(freshdeskIntegration);
       }, 100);
     }
   }

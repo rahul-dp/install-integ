@@ -11,8 +11,10 @@ export default defineNuxtConfig({
   app: {
     baseURL: process.env.NODE_ENV === 'production' ? '/install-integ/' : '/',
   },
-  ssr: false, // Enable if you need SSR
-  target: 'static',
+  ssr: false,
+  nitro: {
+    preset: 'github-pages'
+  },
   router: {
     base: process.env.NODE_ENV === 'production' ? '/install-integ/' : '/',
   },
