@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     permissions:
       contents: read
@@ -26,17 +26,17 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '16'
         
-    - name: Clean install with npm
+    - name: Install dependencies and build
       run: |
         rm -rf node_modules
         rm -f package-lock.json
         rm -f pnpm-lock.yaml
-        npm install --ignore-scripts
-        
-    - name: Generate static files
-      run: npm run generate
+        npm install --legacy-peer-deps
+        export NODE_OPTIONS="--max-old-space-size=4096"
+        export NODE_ENV=production
+        npm run build || npm run generate
       
     - name: Setup Pages
       uses: actions/configure-pages@v4

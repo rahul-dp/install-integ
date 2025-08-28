@@ -7,14 +7,19 @@ set -e
 
 echo "🚀 Starting deployment to GitHub Pages..."
 
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
-    npm install
-fi
+# Clean install
+echo "🧹 Cleaning previous installations..."
+rm -rf node_modules
+rm -f package-lock.json
+rm -f pnpm-lock.yaml
+
+# Install dependencies
+echo "📦 Installing dependencies..."
+npm install --legacy-peer-deps --ignore-scripts
 
 # Generate static files
 echo "🏗️  Building static files..."
+export NODE_OPTIONS="--max-old-space-size=4096"
 npm run generate
 
 # Check if gh-pages is installed
