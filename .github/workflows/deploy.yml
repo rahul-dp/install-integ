@@ -46,9 +46,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
         
-    - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
-      
+    - name: Clean install dependencies
+      run: |
+        rm -rf node_modules
+        rm -f pnpm-lock.yaml
+        pnpm install
+        
     - name: Generate static files
       run: pnpm run generate
       
