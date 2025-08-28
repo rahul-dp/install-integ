@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  srcDir: 'app',
   css: ["./app/assets/css/main.css"],
   vite: {
     plugins: [tailwindcss()],
@@ -14,9 +15,6 @@ export default defineNuxtConfig({
   ssr: false,
   nitro: {
     preset: 'github-pages'
-  },
-  router: {
-    base: process.env.NODE_ENV === 'production' ? '/install-integ/' : '/',
   },
   experimental: {
     payloadExtraction: false,
