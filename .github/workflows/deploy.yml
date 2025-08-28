@@ -46,11 +46,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
         
-    - name: Clean install dependencies
+    - name: Install dependencies
       run: |
         rm -rf node_modules
         rm -f pnpm-lock.yaml
-        pnpm install
+        echo "shamefully-hoist=true" > .npmrc
+        pnpm install --ignore-scripts
         
     - name: Generate static files
       run: pnpm run generate
