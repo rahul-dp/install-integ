@@ -25,11 +25,13 @@
               <div class="flex items-center gap-3 mt-2">
                 <span :class="[
                   'px-2 py-1 text-xs rounded-full',
-                  currentIntegration.connected 
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-600'
+                  isAuthenticating
+                    ? 'bg-blue-100 text-blue-800'
+                    : (isConnected 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-600')
                 ]">
-                  {{ currentIntegration.connected ? 'Connected' : 'Not Connected' }}
+                  {{ isAuthenticating ? 'Authenticating...' : (isConnected ? 'Connected' : 'Not Connected') }}
                 </span>
                 <span class="text-sm text-gray-500">
                   Category: {{ currentIntegration.category }}
@@ -131,14 +133,22 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-4">
-              <button class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+              <button 
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                :disabled="isAuthenticating"
+                :class="{ 'opacity-60 cursor-not-allowed': isAuthenticating }"
+              >
                 Cancel
               </button>
               <button 
                 @click="saveSettings"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                :disabled="isAuthenticating"
+                :class="[
+                  'px-4 py-2 text-white rounded-lg transition-colors',
+                  isAuthenticating ? 'bg-blue-400 cursor-not-allowed opacity-70' : 'bg-blue-600 hover:bg-blue-700'
+                ]"
               >
-                {{ currentIntegration.connected ? 'Save Settings' : 'Save & Connect' }}
+                {{ isConnected ? 'Save Settings' : (isAuthenticating ? 'Connecting…' : 'Save & Connect') }}
               </button>
             </div>
           </div>
@@ -154,28 +164,71 @@
     </div>
 
     <!-- Danger Zone -->
-    <div v-if="currentIntegration.connected" class="mt-6 bg-red-50 border border-red-200 rounded-lg p-6">
+    <div v-if="isAdded" class="mt-6 bg-red-50 border border-red-200 rounded-lg p-6">
       <h3 class="text-lg font-semibold text-red-900 mb-2">Danger Zone</h3>
       <p class="text-sm text-red-700 mb-4">
-        Disconnecting this integration will stop all data synchronization and may affect dependent workflows.
+        These actions are destructive. Disconnect will stop all sync. Delete will remove this integration from your account.
       </p>
-      <button
-        @click="showDisconnectModal = true"
-        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-      >
-        Disconnect Integration
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          @click="showDisconnectModal = true"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Disconnect Integration
+        </button>
+        <button
+          @click="showDeleteModal = true"
+          class="px-4 py-2 bg-white text-red-700 border border-red-300 rounded-lg hover:bg-red-100 transition-colors"
+        >
+          Delete Integration
+        </button>
+      </div>
+    </div>
+
+    <!-- Disconnect Confirmation Modal -->
+    <div v-if="showDisconnectModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/30" @click="showDisconnectModal = false"></div>
+      <div class="relative z-10 w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <h4 class="text-lg font-semibold text-gray-900 mb-2">Disconnect Integration</h4>
+        <p class="text-sm text-gray-600 mb-4">Are you sure you want to disconnect {{ currentIntegration.name }}? You can reconnect later.</p>
+        <div class="flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-lg border" @click="showDisconnectModal = false">Cancel</button>
+          <button class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" @click="confirmDisconnect">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/30" @click="showDeleteModal = false"></div>
+      <div class="relative z-10 w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <h4 class="text-lg font-semibold text-gray-900 mb-2">Delete Integration</h4>
+        <p class="text-sm text-gray-600 mb-4">This will permanently remove {{ currentIntegration.name }} from your integrations list. This action cannot be undone.</p>
+        <div class="flex justify-end gap-2">
+          <button class="px-3 py-2 rounded-lg border" @click="showDeleteModal = false">Cancel</button>
+          <button class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" @click="deleteIntegration">Delete</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
+const { upsertIntegration, removeIntegration, getIntegrationById } = useIntegrations()
 const activeTab = ref('general')
 const showDisconnectModal = ref(false)
+const showDeleteModal = ref(false)
+const isAuthenticating = ref(false)
+
+const integrationIdRef = computed(() => String(route.params.id))
+const storeIntegration = computed(() => getIntegrationById(integrationIdRef.value))
+const isAdded = computed(() => !!storeIntegration.value)
+const isConnected = computed(() => !!storeIntegration.value?.connected)
 
 const tabs = [
   { id: 'general', label: 'General' },
@@ -338,10 +391,29 @@ const permissions = ref([
 
 const saveSettings = () => {
   // Handle connection logic based on auth type if not connected
-  if (!currentIntegration.value.connected) {
+  if (!isConnected.value) {
     if (currentIntegration.value.authType === 'oauth') {
       console.log('Starting OAuth flow for:', currentIntegration.value.name)
       // In a real app, this would redirect to OAuth provider
+      // Simulate network/auth time
+      isAuthenticating.value = true
+      const integrationId = String(route.params.id)
+      setTimeout(() => {
+        upsertIntegration({
+          id: integrationId,
+          name: currentIntegration.value.name,
+          icon: currentIntegration.value.icon,
+          iconBg: currentIntegration.value.iconBg,
+          description: currentIntegration.value.description,
+          connected: true,
+          category: currentIntegration.value.category,
+          authType: currentIntegration.value.authType,
+          version: '1.0.0',
+          lastSynced: 'Just now'
+        })
+        isAuthenticating.value = false
+        // Stay on settings page; header badge will reflect Connected via store
+      }, 1200)
     } else {
       console.log('Connecting with API key for:', currentIntegration.value.name)
       // Validate that required fields are filled
@@ -355,10 +427,57 @@ const saveSettings = () => {
       }
       // In a real app, this would make an API call to connect
       console.log('Connection settings:', settings.value);
+
+      // On success, add/update the integration in the global list
+      const integrationId = String(route.params.id)
+      let instance = ''
+      if (currentIntegration.value.domainSuffix && settings.value.domain) {
+        const hasSuffix = settings.value.domain.endsWith(currentIntegration.value.domainSuffix)
+        const domain = hasSuffix
+          ? settings.value.domain
+          : `${settings.value.domain}${currentIntegration.value.domainSuffix}`
+        instance = `https://${domain}`
+      } else {
+        instance = settings.value.webhookUrl || ''
+      }
+      // Simulate network/auth time
+      isAuthenticating.value = true
+      setTimeout(() => {
+        upsertIntegration({
+          id: integrationId,
+          name: currentIntegration.value.name,
+          icon: currentIntegration.value.icon,
+          iconBg: currentIntegration.value.iconBg,
+          description: currentIntegration.value.description,
+          connected: true,
+          category: currentIntegration.value.category,
+          authType: currentIntegration.value.authType,
+          instance,
+          version: '1.0.0',
+          lastSynced: 'Just now'
+        })
+        isAuthenticating.value = false
+        // Stay on settings page; header badge will reflect Connected via store
+      }, 1200)
     }
   } else {
     // Just save settings if already connected
     console.log('Saving settings...', settings.value)
   }
+}
+
+const confirmDisconnect = () => {
+  // Mark as offline but keep in list
+  if (storeIntegration.value) {
+    upsertIntegration({ ...storeIntegration.value, connected: false })
+  }
+  showDisconnectModal.value = false
+}
+
+const deleteIntegration = () => {
+  const id = integrationIdRef.value
+  removeIntegration(id)
+  showDeleteModal.value = false
+  router.push('/settings/integrations')
 }
 </script>

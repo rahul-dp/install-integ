@@ -133,45 +133,8 @@ import { useRoute, useRouter } from 'vue-router';
 // State
 const router = useRouter();
 
-// Add a new ref for the connected integrations
-const connectedIntegrations = ref([
-  {
-    id: 'slack',
-    name: 'Slack',
-    icon: '💬',
-    iconBg: 'bg-purple-100',
-    description: 'Connect your Slack workspace',
-    connected: true,
-    instance: 'https://workspace.slack.com',
-    lastSynced: '2 minutes ago',
-    version: '2.1.3',
-    category: 'Communication'
-  },
-  {
-    id: 'google-calendar',
-    name: 'Google Calendar',
-    icon: '📅',
-    iconBg: 'bg-blue-100',
-    description: 'Sync your calendar events',
-    connected: true,
-    instance: 'https://calendar.google.com',
-    lastSynced: '5 minutes ago',
-    version: '1.5.2',
-    category: 'Productivity'
-  },
-  {
-    id: 'salesforce',
-    name: 'Salesforce',
-    icon: '☁️',
-    iconBg: 'bg-sky-100',
-    description: 'Connect your Salesforce account',
-    connected: true,
-    instance: 'https://company.my.salesforce.com',
-    lastSynced: '10 minutes ago',
-    version: '3.0.1',
-    category: 'CRM'
-  }
-]);
+// Use global store for connected integrations
+const { connectedIntegrations } = useIntegrations();
 
 // Computed
 const route = useRoute();
@@ -218,57 +181,5 @@ const integrationButtons = [
   { icon: '🔍', name: 'Search', description: 'Search for more integrations', iconBg: 'bg-gray-200', authType: 'apiKey' }
 ];
 
-// Your existing integrations ref
-const integrations = ref([
-  {
-    id: 'salesforce',
-    name: 'Salesforce',
-    category: 'CRM',
-    icon: '☁️',
-    iconBg: 'bg-sky-100',
-    description: 'Integrate with Salesforce CRM for customer data',
-    connected: true,
-    instance: 'https://aerolabs.salesforce.com',
-    lastSynced: '2 hours ago',
-    version: '1.9.5'
-  },
-  {
-    id: 'zendesk',
-    name: 'Zendesk',
-    category: 'CRM',
-    icon: '🎯',
-    iconBg: 'bg-orange-100',
-    description: 'Connect with Zendesk for marketing and sales',
-    connected: true,
-    instance: 'https://aerolabs.zendesk.com',
-    lastSynced: '2 hours ago',
-    version: '2.1.0'
-  },
-  {
-    id: 'slack',
-    name: 'Slack',
-    category: 'Communication',
-    icon: '💬',
-    iconBg: 'bg-purple-100',
-    description: 'Send notifications and messages to Slack channels',
-    connected: true,
-    company: 'AeroLabs',
-    instance: 'https://aerolabs.slack.com',
-    lastSynced: '2 hours ago',
-    version: '1.1.4'
-  },
-  {
-    id: 'google-calendar',
-    name: 'Google Calendar',
-    category: 'Calendar',
-    icon: '📅',
-    iconBg: 'bg-blue-100',
-    description: 'Sync events and meetings with Google Calendar',
-    connected: true,
-    company: 'AeroLabs',
-    instance: 'calendar.google.com/aerolabs',
-    lastSynced: '30 minutes ago',
-    version: '3.2.1'
-  },
-]);
+
 </script>
