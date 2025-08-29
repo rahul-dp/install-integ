@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Back Navigation -->
     <NuxtLink 
       to="/settings/integrations" 
@@ -67,7 +67,7 @@
       <div class="p-6">
         <!-- General Tab -->
         <div v-if="activeTab === 'general'">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Configuration Settings</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">General configuration</h2>
           
           <div class="space-y-6">
             <div v-if="currentIntegration.authType === 'apiKey'">
@@ -82,25 +82,17 @@
               />
               <p class="mt-1 text-sm text-gray-500">Your API key is encrypted and stored securely</p>
             </div>
-            <div v-if="currentIntegration.domainSuffix">
+            <div v-if="currentIntegration.authType === 'apiKey'">
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Domain
+                Org URL
               </label>
               <input
                 type="text"
                 v-model="settings.domain"
-                :placeholder="`Enter your ${currentIntegration.name} domain (e.g. example${currentIntegration.domainSuffix})`"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Webhook URL
-              </label>
-              <input
-                type="url"
-                v-model="settings.webhookUrl"
-                placeholder="https://your-domain.com/webhook"
+                :placeholder="currentIntegration.domainSuffix
+                  ? `Enter your ${currentIntegration.name} domain (e.g. example${currentIntegration.domainSuffix})`
+                  : 'Enter your Org URL (e.g. https://your-org.com)'
+                "
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -156,7 +148,7 @@
 
         <!-- Call Logging Tab -->
         <div v-if="activeTab === 'call-logging'">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Call Logging Configuration</h2>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Call logging configuration</h2>
           <p class="text-gray-600">Configure how calls are logged and tracked for this integration.</p>
           <!-- Add call logging specific content here -->
         </div>
@@ -164,23 +156,23 @@
     </div>
 
     <!-- Danger Zone -->
-    <div v-if="isAdded" class="mt-6 bg-red-50 border border-red-200 rounded-lg p-6">
+    <div v-if="isAdded && activeTab === 'general'" class="mt-6 bg-red-50 border border-red-200 rounded-lg p-6">
       <h3 class="text-lg font-semibold text-red-900 mb-2">Danger Zone</h3>
       <p class="text-sm text-red-700 mb-4">
         These actions are destructive. Disconnect will stop all sync. Delete will remove this integration from your account.
       </p>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-row-reverse items-center gap-3">
         <button
           @click="showDisconnectModal = true"
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
-          Disconnect Integration
+          Disable integration
         </button>
         <button
           @click="showDeleteModal = true"
           class="px-4 py-2 bg-white text-red-700 border border-red-300 rounded-lg hover:bg-red-100 transition-colors"
         >
-          Delete Integration
+          Delete integration
         </button>
       </div>
     </div>
@@ -216,6 +208,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+definePageMeta({ layout: 'settings' })
 
 const route = useRoute()
 const router = useRouter()
@@ -330,7 +323,6 @@ const currentIntegration = computed(() => {
 const settings = ref({
   apiKey: '',
   domain: '',
-  webhookUrl: '',
   syncFrequency: 'realtime',
   notifications: true
 })
@@ -417,8 +409,8 @@ const saveSettings = () => {
     } else {
       console.log('Connecting with API key for:', currentIntegration.value.name)
       // Validate that required fields are filled
-      if (currentIntegration.value.domainSuffix && !settings.value.domain) {
-        alert('Please enter your domain name');
+      if (!settings.value.domain) {
+        alert('Please enter your Org URL');
         return;
       }
       if (!settings.value.apiKey) {
@@ -437,8 +429,11 @@ const saveSettings = () => {
           ? settings.value.domain
           : `${settings.value.domain}${currentIntegration.value.domainSuffix}`
         instance = `https://${domain}`
-      } else {
-        instance = settings.value.webhookUrl || ''
+      } else if (settings.value.domain) {
+        const org = settings.value.domain.trim()
+        instance = org.startsWith('http://') || org.startsWith('https://')
+          ? org
+          : `https://${org}`
       }
       // Simulate network/auth time
       isAuthenticating.value = true

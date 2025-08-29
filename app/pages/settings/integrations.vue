@@ -1,37 +1,12 @@
 <template>
-  <div class="w-full min-h-screen">
-    <header class="w-full h-16 flex items-center justify-center bg-gray-100">
-      header
-    </header>
-    <div class="flex">
-      <aside class="w-64 shrink-0">
-        <nav class="bg-gray-100 p-6 h-full">
-          <NuxtLink
-            to="/settings/integrations"
-            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm"
-            :class="[ route.path.startsWith('/settings/integrations') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50' ]"
-          >
-            <span class="text-sm">Integrations</span>
-          </NuxtLink>
-        </nav>
-      </aside>
-      <main class="flex-1 p-8 max-w-7xl mx-auto">
+  <div>
     <!-- Page Header -->
-    <div class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Integrations</h1>
-        <p class="mt-2 text-gray-600">Connect and manage third-party connections to Dialpad</p>
-      </div>
-      <NuxtLink to="/" class="bg-white hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg border border-gray-300 flex items-center space-x-1">
-        <span class="text-sm">Close</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </NuxtLink>
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Integrations</h1>
+      <p class="mt-2 text-gray-600">Connect and manage third-party connections to Dialpad</p>
     </div>
 
-    <!-- Search and Filter Bar -->
+    <!-- Add integrations CTA -->
     <div class="mb-8 flex flex-col gap-4 border border-gray-200 p-6 rounded-lg">
       <p class="font-medium text-sm">Add integrations to your organization</p>
       <div class="flex items-center flex-wrap gap-3">
@@ -138,8 +113,6 @@
           </div>
         </div>
       </div>
-      </div>
-      </main>
     </div>
   </div>
 </template>
@@ -147,6 +120,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+definePageMeta({ layout: 'settings' })
 
 // State
 const router = useRouter();
