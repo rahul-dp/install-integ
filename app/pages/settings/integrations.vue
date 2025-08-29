@@ -1,5 +1,21 @@
 <template>
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="w-full min-h-screen">
+    <header class="w-full h-16 flex items-center justify-center bg-gray-100">
+      header
+    </header>
+    <div class="flex">
+      <aside class="w-64 shrink-0">
+        <nav class="bg-gray-100 p-6 h-full">
+          <NuxtLink
+            to="/settings/integrations"
+            class="flex items-center gap-2 px-3 py-2 rounded-md text-sm"
+            :class="[ route.path.startsWith('/settings/integrations') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50' ]"
+          >
+            <span class="text-sm">Integrations</span>
+          </NuxtLink>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8 max-w-7xl mx-auto">
     <!-- Page Header -->
     <div class="mb-8 flex items-center justify-between">
       <div>
@@ -122,6 +138,8 @@
           </div>
         </div>
       </div>
+      </div>
+      </main>
     </div>
   </div>
 </template>
